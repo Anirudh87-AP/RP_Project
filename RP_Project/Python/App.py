@@ -10,61 +10,6 @@ from scipy.signal import stft, istft
 
 import base64
 
-def set_white_text():
-    st.markdown(
-        """
-        <style>
-        /* Main text */
-        html, body, [class*="css"] {
-            color: white !important;
-        }
-
-        /* Headers */
-        h1, h2, h3, h4, h5, h6 {
-            color: white !important;
-        }
-
-        /* Sidebar */
-        .stSidebar, .stSidebar * {
-            color: white !important;
-        }
-
-        /* Radio buttons, sliders, labels */
-        label, span, div {
-            color: white !important;
-        }
-
-        /* Metrics */
-        [data-testid="stMetricValue"],
-        [data-testid="stMetricLabel"] {
-            color: white !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-def set_bg(img_file):
-    with open(img_file, "rb") as f:
-        data = f.read()
-    encoded = base64.b64encode(data).decode()
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background-image: url("data:image/jpg;base64,{encoded}");
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-set_bg(r"C:\Users\nhkai\OneDrive\Desktop\C++\bg.jpg")
-set_white_text()
 
 # -----------------------------
 # Utility Functions
