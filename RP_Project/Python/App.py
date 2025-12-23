@@ -5,7 +5,7 @@ import librosa.display
 import matplotlib.pyplot as plt
 import sounddevice as sd
 import soundfile as sf
-import audeer as audio
+import audiofile as audio
 from scipy.signal import stft, istft
 
 import base64
