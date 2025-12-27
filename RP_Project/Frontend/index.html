@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Enhancement System - Random Process Analysis</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header__content">
+                <h1>🎵 Speech Enhancement System</h1>
+                <p class="subtitle">Complex Random Process Analysis for Communication Systems</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-tabs">
+                <li><a href="#upload-section" class="nav-link active" data-tab="upload">Upload</a></li>
+                <li><a href="#record-section" class="nav-link" data-tab="record">Record</a></li>
+                <li><a href="#processing-section" class="nav-link" data-tab="processing">Process</a></li>
+                <li><a href="#results-section" class="nav-link" data-tab="results">Results</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+
+            <!-- SECTION 1: Upload Audio -->
+            <section id="upload-section" class="section active" data-section="upload">
+                <div class="section__header">
+                    <h2>📁 Upload Audio File</h2>
+                    <p>Supported formats: MP3, WAV, FLAC, OGG</p>
+                </div>
+
+                <div class="upload-container">
+                    <!-- File Input -->
+                    <div class="upload-box">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <h3>Drag and drop your audio file here</h3>
+                        <p>or click to select</p>
+                        <input type="file" id="file-input" accept=".mp3,.wav,.flac,.ogg" hidden>
+                        <button class="btn btn--primary" id="select-file-btn">Select File</button>
+                    </div>
+
+                    <!-- File Info -->
+                    <div id="file-info" class="file-info hidden">
+                        <h3>File Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="label">File Name:</span>
+                                <span id="file-name">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">File Size:</span>
+                                <span id="file-size">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Format:</span>
+                                <span id="file-format">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Duration:</span>
+                                <span id="file-duration">-</span>
+                            </div>
+                        </div>
+                        <button class="btn btn--secondary" id="clear-file-btn">Clear</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: Record Audio -->
+            <section id="record-section" class="section" data-section="record">
+                <div class="section__header">
+                    <h2>🎙️ Record Audio</h2>
+                    <p>Record audio directly from your microphone</p>
+                </div>
+
+                <div class="record-container">
+                    <div class="record-controls">
+                        <button class="btn btn--primary" id="start-recording-btn">Start Recording</button>
+                        <button class="btn btn--secondary hidden" id="stop-recording-btn">Stop Recording</button>
+                        <span id="recording-timer" class="recording-timer hidden">00:00</span>
+                    </div>
+
+                    <div id="recording-info" class="recording-info hidden">
+                        <h3>Recording Complete</h3>
+                        <audio id="recorded-audio" controls style="width: 100%; margin: 20px 0;"></audio>
+                        <button class="btn btn--primary" id="save-recording-btn">Save Recording</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: Processing -->
+            <section id="processing-section" class="section" data-section="processing">
+                <div class="section__header">
+                    <h2>⚙️ Process Audio</h2>
+                    <p>Start speech enhancement processing</p>
+                </div>
+
+                <div class="processing-container">
+                    <button class="btn btn--primary btn--lg" id="process-btn" disabled>
+                        Start Processing
+                    </button>
+
+                    <!-- Progress Bar -->
+                    <div id="progress-container" class="progress-container hidden">
+                        <h3>Processing Progress</h3>
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+                        <p id="progress-text">0%</p>
+                        <div id="loading-spinner" class="spinner"></div>
+                    </div>
+
+                    <!-- Status Message -->
+                    <div id="status-message" class="status-message hidden"></div>
+                </div>
+            </section>
+
+            <!-- SECTION 4: Results -->
+            <section id="results-section" class="section" data-section="results">
+                <div class="section__header">
+                    <h2>📊 Results & Metrics</h2>
+                    <p>Speech enhancement results and analysis</p>
+                </div>
+
+                <div id="results-container" class="results-container hidden">
+                    <!-- Audio Comparison -->
+                    <div class="audio-comparison card">
+                        <h3>Audio Comparison</h3>
+                        <div class="audio-pair">
+                            <div class="audio-item">
+                                <h4>Original Audio</h4>
+                                <audio id="original-audio" controls style="width: 100%;"></audio>
+                            </div>
+                            <div class="audio-item">
+                                <h4>Enhanced Audio</h4>
+                                <audio id="enhanced-audio" controls style="width: 100%;"></audio>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 8 Metrics Table -->
+                    <div class="metrics-section card">
+                        <h3>📈 8 Processing Metrics</h3>
+                        <table class="metrics-table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Value</th>
+                                    <th>Unit</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Signal Power</td>
+                                    <td id="metric-signal-power">-</td>
+                                    <td>dB</td>
+                                    <td>Formula 1: Average power of input signal</td>
+                                </tr>
+                                <tr>
+                                    <td>Noise Power</td>
+                                    <td id="metric-noise-power">-</td>
+                                    <td>dB</td>
+                                    <td>Formula 2: Estimated noise power</td>
+                                </tr>
+                                <tr>
+                                    <td>SNR (Input)</td>
+                                    <td id="metric-snr-input">-</td>
+                                    <td>dB</td>
+                                    <td>Formula 3: Signal-to-Noise Ratio</td>
+                                </tr>
+                                <tr>
+                                    <td>Wiener Filter Gain</td>
+                                    <td id="metric-wiener-gain">-</td>
+                                    <td>Linear</td>
+                                    <td>Formula 4: Wiener filter amplification</td>
+                                </tr>
+                                <tr>
+                                    <td>Spectral Subtraction</td>
+                                    <td id="metric-spectral-sub">-</td>
+                                    <td>Factor</td>
+                                    <td>Formula 5: Spectral subtraction strength</td>
+                                </tr>
+                                <tr>
+                                    <td>Spectral Distance</td>
+                                    <td id="metric-spectral-dist">-</td>
+                                    <td>Distance</td>
+                                    <td>Formula 6: Magnitude change measure</td>
+                                </tr>
+                                <tr>
+                                    <td>Segmental SNR</td>
+                                    <td id="metric-segmental-snr">-</td>
+                                    <td>dB</td>
+                                    <td>Formula 7: Average SNR across frames</td>
+                                </tr>
+                                <tr>
+                                    <td>Processing Duration</td>
+                                    <td id="metric-duration">-</td>
+                                    <td>seconds</td>
+                                    <td>Formula 8: Total processing time</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Download Button -->
+                    <div class="download-section">
+                        <button class="btn btn--primary btn--lg" id="download-btn">
+                            📥 Download Enhanced Audio
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Team Information -->
+    <section class="team-section">
+        <div class="container">
+            <h2>👥 Project Team</h2>
+            <div class="team-grid">
+                <div class="team-card">
+                    <h3>Navin P G</h3>
+                    <p class="roll">24BEC1055</p>
+                    <p class="role">Backend & Database</p>
+                </div>
+                <div class="team-card">
+                    <h3>A P Anirudh</h3>
+                    <p class="roll">24BEC1158</p>
+                    <p class="role">Signal Processing</p>
+                </div>
+                <div class="team-card">
+                    <h3>Kailash N H</h3>
+                    <p class="roll">24BEC1546</p>
+                    <p class="role">Frontend Development</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Speech Enhancement System. All rights reserved.</p>
+            <p>Department of Electronics and Communication Engineering</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+</body>
+</html>
