@@ -1,187 +1,164 @@
-"""
-Database.py - SQLAlchemy ORM Models for Speech Enhancement System
-8 ORM Models for all database tables
-"""
-
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, Boolean
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 from datetime import datetime
-import uuid
+import os
 
-db = SQLAlchemy()
+Base = declarative_base()
 
-# Model 1: Users
-class User(db.Model):
+class User(Base):
+    """User model for session management"""
     __tablename__ = 'users'
     
-    id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.String(255), unique=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_accessed = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id = Column(Integer, primary_key=True)
+    username = Column(String(80), unique=True, nullable=False)
+    email = Column(String(120), unique=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
-    upload_sessions = db.relationship('UploadSession', backref='user', lazy=True)
-    recording_sessions = db.relationship('RecordingSession', backref='user', lazy=True)
-    download_history = db.relationship('DownloadHistory', backref='user', lazy=True)
+    upload_sessions = relationship('UploadSession', back_populates='user')
+    recording_sessions = relationship('RecordingSession', back_populates='user')
     
     def __repr__(self):
-        return f'<User {self.session_id}>'
+        return f'<User {self.username}>'
 
-# Model 2: Upload Sessions
-class UploadSession(db.Model):
+class UploadSession(Base):
+    """Model for upload sessions"""
     __tablename__ = 'upload_sessions'
     
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    session_name = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    filename = Column(String(255), nullable=False)
+    original_filename = Column(String(255), nullable=False)
+    file_size = Column(Integer, nullable=False)
+    upload_timestamp = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
-    audio_files = db.relationship('AudioFile', backref='upload_session', lazy=True)
+    user = relationship('User', back_populates='upload_sessions')
+    audio_files = relationship('AudioFile', back_populates='upload_session')
     
     def __repr__(self):
-        return f'<UploadSession {self.session_name}>'
+        return f'<UploadSession {self.filename}>'
 
-# Model 3: Audio Files
-class AudioFile(db.Model):
+class AudioFile(Base):
+    """Model for audio files"""
     __tablename__ = 'audio_files'
     
-    id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.Integer, db.ForeignKey('upload_sessions.id'), nullable=False)
-    file_name = db.Column(db.String(255), nullable=False)
-    original_path = db.Column(db.String(500), nullable=False)
-    file_size = db.Column(db.Integer)
-    duration_seconds = db.Column(db.Float)
-    sample_rate = db.Column(db.Integer)
-    channels = db.Column(db.Integer)
-    format = db.Column(db.String(50))
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    id = Column(Integer, primary_key=True)
+    upload_session_id = Column(Integer, ForeignKey('upload_sessions.id'), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    format = Column(String(10), nullable=False)  # mp3, wav, flac, ogg
+    duration = Column(Float, nullable=True)  # seconds
+    sample_rate = Column(Integer, nullable=True)  # Hz
+    upload_timestamp = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
-    processing_jobs = db.relationship('ProcessingJob', backref='audio_file', lazy=True)
-    download_history = db.relationship('DownloadHistory', backref='audio_file', lazy=True)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'file_name': self.file_name,
-            'duration_seconds': self.duration_seconds,
-            'sample_rate': self.sample_rate,
-            'format': self.format,
-            'uploaded_at': self.uploaded_at.isoformat()
-        }
+    upload_session = relationship('UploadSession', back_populates='audio_files')
+    processing_jobs = relationship('ProcessingJob', back_populates='audio_file')
+    recording_sessions = relationship('RecordingSession', back_populates='audio_file')
     
     def __repr__(self):
-        return f'<AudioFile {self.file_name}>'
+        return f'<AudioFile {self.format} {self.id}>'
 
-# Model 4: Processing Jobs
-class ProcessingJob(db.Model):
+class ProcessingJob(Base):
+    """Model for processing jobs"""
     __tablename__ = 'processing_jobs'
     
-    id = db.Column(db.Integer, primary_key=True)
-    job_id = db.Column(db.String(255), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
-    audio_file_id = db.Column(db.Integer, db.ForeignKey('audio_files.id'), nullable=False)
-    status = db.Column(db.String(50), default='pending')  # pending, processing, completed, failed
-    progress = db.Column(db.Integer, default=0)
-    started_at = db.Column(db.DateTime)
-    completed_at = db.Column(db.DateTime)
-    error_message = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    id = Column(Integer, primary_key=True)
+    audio_file_id = Column(Integer, ForeignKey('audio_files.id'), nullable=False)
+    status = Column(String(50), default='pending')  # pending, processing, completed, failed
+    start_time = Column(DateTime, default=datetime.utcnow)
+    end_time = Column(DateTime, nullable=True)
+    error_message = Column(Text, nullable=True)
     
-    # Relationships
-    processing_results = db.relationship('ProcessingResult', backref='job', lazy=True, uselist=False)
-    
-    def to_dict(self):
-        return {
-            'job_id': self.job_id,
-            'status': self.status,
-            'progress': self.progress,
-            'created_at': self.created_at.isoformat(),
-            'error_message': self.error_message
-        }
+    audio_file = relationship('AudioFile', back_populates='processing_jobs')
+    processing_results = relationship('ProcessingResult', back_populates='processing_job')
     
     def __repr__(self):
-        return f'<ProcessingJob {self.job_id}>'
+        return f'<ProcessingJob {self.id} {self.status}>'
 
-# Model 5: Processing Results (Metrics)
-class ProcessingResult(db.Model):
+class ProcessingResult(Base):
+    """Model for processing results (8 formulas)"""
     __tablename__ = 'processing_results'
     
-    id = db.Column(db.Integer, primary_key=True)
-    job_id = db.Column(db.Integer, db.ForeignKey('processing_jobs.id'), nullable=False)
+    id = Column(Integer, primary_key=True)
+    processing_job_id = Column(Integer, ForeignKey('processing_jobs.id'), nullable=False)
     
-    # 8 Formulas / Metrics
-    signal_power = db.Column(db.Float)  # Formula 1
-    noise_power = db.Column(db.Float)   # Formula 2
-    snr_input = db.Column(db.Float)     # Formula 3
-    wiener_filter_gain = db.Column(db.Float)  # Formula 4
-    spectral_subtraction_factor = db.Column(db.Float)  # Formula 5
-    spectral_distance = db.Column(db.Float)  # Formula 6
-    segmental_snr = db.Column(db.Float)  # Formula 7
-    processing_duration = db.Column(db.Float)  # Formula 8
+    # 8 Formula Results
+    signal_power = Column(Float, nullable=True)  # Formula 1: dB
+    noise_power = Column(Float, nullable=True)  # Formula 2: dB
+    snr_input = Column(Float, nullable=True)  # Formula 3: dB
+    wiener_gain = Column(Float, nullable=True)  # Formula 4: linear
+    spectral_subtraction_factor = Column(Float, nullable=True)  # Formula 5
+    spectral_distance = Column(Float, nullable=True)  # Formula 6
+    segmental_snr = Column(Float, nullable=True)  # Formula 7: dB
+    processing_duration = Column(Float, nullable=True)  # Formula 8: seconds
     
-    processed_file_path = db.Column(db.String(500))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Output
+    output_file_path = Column(String(500), nullable=True)
+    result_timestamp = Column(DateTime, default=datetime.utcnow)
     
-    def to_dict(self):
-        return {
-            'signal_power': self.signal_power,
-            'noise_power': self.noise_power,
-            'snr_input': self.snr_input,
-            'wiener_filter_gain': self.wiener_filter_gain,
-            'spectral_subtraction_factor': self.spectral_subtraction_factor,
-            'spectral_distance': self.spectral_distance,
-            'segmental_snr': self.segmental_snr,
-            'processing_duration': self.processing_duration
-        }
+    processing_job = relationship('ProcessingJob', back_populates='processing_results')
     
     def __repr__(self):
-        return f'<ProcessingResult {self.job_id}>'
+        return f'<ProcessingResult {self.id}>'
 
-# Model 6: Recording Sessions
-class RecordingSession(db.Model):
+class RecordingSession(Base):
+    """Model for recording sessions"""
     __tablename__ = 'recording_sessions'
     
-    id = db.Column(db.Integer, primary_key=True)
-    recording_id = db.Column(db.String(255), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    duration_seconds = db.Column(db.Float)
-    sample_rate = db.Column(db.Integer)
-    recording_path = db.Column(db.String(500))
-    status = db.Column(db.String(50), default='recording')  # recording, saved, processing
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    audio_file_id = Column(Integer, ForeignKey('audio_files.id'), nullable=True)
+    start_time = Column(DateTime, default=datetime.utcnow)
+    end_time = Column(DateTime, nullable=True)
+    duration = Column(Float, nullable=True)
     
-    def to_dict(self):
-        return {
-            'recording_id': self.recording_id,
-            'duration_seconds': self.duration_seconds,
-            'status': self.status,
-            'created_at': self.created_at.isoformat()
-        }
+    user = relationship('User', back_populates='recording_sessions')
+    audio_file = relationship('AudioFile', back_populates='recording_sessions')
     
     def __repr__(self):
-        return f'<RecordingSession {self.recording_id}>'
+        return f'<RecordingSession {self.id}>'
 
-# Model 7: Download History
-class DownloadHistory(db.Model):
+class DownloadHistory(Base):
+    """Model for download history"""
     __tablename__ = 'download_history'
     
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    file_id = db.Column(db.Integer, db.ForeignKey('audio_files.id'), nullable=False)
-    downloaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    id = Column(Integer, primary_key=True)
+    processing_job_id = Column(Integer, ForeignKey('processing_jobs.id'), nullable=False)
+    download_timestamp = Column(DateTime, default=datetime.utcnow)
+    download_count = Column(Integer, default=1)
     
     def __repr__(self):
-        return f'<DownloadHistory {self.user_id}>'
+        return f'<DownloadHistory {self.id}>'
 
-# Model 8: System Logs
-class SystemLog(db.Model):
+class SystemLog(Base):
+    """Model for system logs"""
     __tablename__ = 'system_logs'
     
-    id = db.Column(db.Integer, primary_key=True)
-    log_type = db.Column(db.String(50))  # info, warning, error
-    message = db.Column(db.String(500))
-    details = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    id = Column(Integer, primary_key=True)
+    log_level = Column(String(20))  # INFO, WARNING, ERROR, CRITICAL
+    message = Column(Text)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    module = Column(String(100), nullable=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     
     def __repr__(self):
-        return f'<SystemLog {self.log_type}>'
+        return f'<SystemLog {self.log_level} {self.timestamp}>'
+
+# Initialize database function
+def init_db(database_url='sqlite:///database/speech_enhancement.db'):
+    """Initialize database with all tables"""
+    from sqlalchemy import create_engine
+    
+    engine = create_engine(database_url)
+    Base.metadata.create_all(bind=engine)
+    
+    # Load SQL schema if available
+    schema_file = 'SQL/Schema.sql'
+    if os.path.exists(schema_file):
+        try:
+            with open(schema_file, 'r') as f:
+                sql_content = f.read()
+                # Note: SQLAlchemy ORM creates tables, schema.sql is for reference
+        except Exception as e:
+            print(f"Warning: Could not load schema file: {e}")
+    
+    return engine
